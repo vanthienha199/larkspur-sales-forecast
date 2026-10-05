@@ -87,3 +87,53 @@ def test_model_beats_naive_on_a_holdout(sales):
     pred = Forecaster().fit(frame[frame["date"] <= origin]).predict(test)
     naive = seasonal_naive(frame, origin).loc[test.index]
     assert wape(test["revenue"], pred["forecast"]) < wape(test["revenue"], naive)
+
+
+def test_product_shares_sum_to_one_every_weekday():
+    from forecast.products import shares_sum
+
+    for weekday in range(7):
+        assert abs(shares_sum(weekday) - 1.0) < 1e-9, weekday
+
+
+def test_bake_list_reconciles_with_the_revenue_it_came_from():
+    from forecast.products import MENU, bake_list
+
+    rows = bake_list(2942.78, 2390.67, 2976.04, 2)
+    assert len(rows) == len(MENU)
+    money = sum(r["expected"] * p.price for r, p in zip(rows, MENU))
+    assert abs(money - 2942.78) < 12, money          # rounding to whole items only
+
+
+def test_bake_list_ranges_are_ordered_and_rounded_to_whole_trays():
+    from forecast.products import bake_list
+
+    for row in bake_list(2942.78, 2390.67, 2976.04, 5):
+        assert row["low"] <= row["expected"] <= row["high"], row
+        assert row["bake"] % row["batch"] == 0, row
+        assert row["bake"] >= row["expected"], row   # never plan to bake short
+
+
+def test_a_closed_day_has_no_bake_list():
+    import json
+    from pathlib import Path
+
+    site = Path(__file__).resolve().parent.parent / "site" / "data.js"
+    payload = json.loads(site.read_text().split("=", 1)[1].rstrip().rstrip(";"))
+    for location in payload["locations"]:
+        tomorrow = location.get("tomorrow")
+        if tomorrow and tomorrow["closed"]:
+            assert tomorrow["items"] == []
+
+
+def test_every_location_carries_a_bake_list_or_a_closure():
+    import json
+    from pathlib import Path
+
+    site = Path(__file__).resolve().parent.parent / "site" / "data.js"
+    payload = json.loads(site.read_text().split("=", 1)[1].rstrip().rstrip(";"))
+    assert payload["menu"], "the site needs the menu to explain the counts"
+    for location in payload["locations"]:
+        tomorrow = location["tomorrow"]
+        assert tomorrow is not None, location["key"]
+        assert tomorrow["closed"] or tomorrow["items"], location["key"]
