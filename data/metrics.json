@@ -1,0 +1,138 @@
+{
+  "horizon_days": 28,
+  "folds": [
+    {
+      "origin": "2026-04-15",
+      "days": 112,
+      "wape_model": 0.07050602666783913,
+      "wape_naive": 0.12736318076403066
+    },
+    {
+      "origin": "2026-05-13",
+      "days": 112,
+      "wape_model": 0.07111295079844028,
+      "wape_naive": 0.09528925704356936
+    },
+    {
+      "origin": "2026-06-10",
+      "days": 112,
+      "wape_model": 0.07593756617195525,
+      "wape_naive": 0.12555385429016228
+    },
+    {
+      "origin": "2026-07-08",
+      "days": 112,
+      "wape_model": 0.06352374806741835,
+      "wape_naive": 0.12333569084982265
+    },
+    {
+      "origin": "2026-08-05",
+      "days": 112,
+      "wape_model": 0.0696552519117714,
+      "wape_naive": 0.1071269230077761
+    },
+    {
+      "origin": "2026-09-02",
+      "days": 112,
+      "wape_model": 0.06458453795454648,
+      "wape_naive": 0.10068823136053486
+    }
+  ],
+  "overall": {
+    "wape_model": 0.06909389703830121,
+    "wape_naive": 0.11282577699799702,
+    "mape_model": 0.0702102474057957,
+    "mape_naive": 0.11295783750554707,
+    "bias_model": -0.012918941378447362,
+    "interval_coverage_80": 0.7916666666666666,
+    "days_scored": 672
+  },
+  "per_location": {
+    "eastgate": {
+      "wape_model": 0.07400927570452441,
+      "wape_naive": 0.11014647438831637,
+      "mape_model": 0.07515231617502678,
+      "mape_naive": 0.11102282547097071
+    },
+    "north-hill": {
+      "wape_model": 0.06990763817941387,
+      "wape_naive": 0.11929581233497155,
+      "mape_model": 0.07081877259033599,
+      "mape_naive": 0.11656612732262216
+    },
+    "old-town": {
+      "wape_model": 0.06791169689292628,
+      "wape_naive": 0.10610782124066215,
+      "mape_model": 0.0664816928508923,
+      "mape_naive": 0.10390431593488307
+    },
+    "riverside": {
+      "wape_model": 0.06726650255648296,
+      "wape_naive": 0.11747876820401705,
+      "mape_model": 0.06909421783110362,
+      "mape_naive": 0.1200616510030586
+    }
+  },
+  "importance": [
+    {
+      "feature": "Same weekday average, 4 weeks back",
+      "mae_increase": 207.26107141802595
+    },
+    {
+      "feature": "Day of week",
+      "mae_increase": 87.00467852593619
+    },
+    {
+      "feature": "Location",
+      "mae_increase": 64.85372622764447
+    },
+    {
+      "feature": "28-day average, 4 weeks back",
+      "mae_increase": 44.433565870783525
+    },
+    {
+      "feature": "Sales 28 days ago",
+      "mae_increase": 27.82686051441036
+    },
+    {
+      "feature": "Planned promo",
+      "mae_increase": 26.771176063522756
+    },
+    {
+      "feature": "Sales 35 days ago",
+      "mae_increase": 23.54306191289482
+    },
+    {
+      "feature": "Sales a year ago",
+      "mae_increase": 22.57662741038593
+    },
+    {
+      "feature": "Holiday",
+      "mae_increase": 19.33015798443479
+    },
+    {
+      "feature": "Season (cos)",
+      "mae_increase": 0.9992282832840615
+    },
+    {
+      "feature": "Season (sin)",
+      "mae_increase": 0.6196291987748666
+    },
+    {
+      "feature": "Month",
+      "mae_increase": 0.0
+    },
+    {
+      "feature": "Day before closure",
+      "mae_increase": 0.0
+    },
+    {
+      "feature": "Closed day",
+      "mae_increase": 0.0
+    },
+    {
+      "feature": "Store age",
+      "mae_increase": -0.6158120413842951
+    }
+  ]
+}

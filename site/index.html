@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Larkspur Bakehouse, 28-day sales forecast (demo)</title>
+<meta name="description" content="Demand forecast for a fictional four-location bakery: backtest against a naive baseline, calibrated intervals, feature importance and CSV export.">
+<style>
+@font-face { font-family: Brico; src: url(fonts/bricolage-700.woff2) format("woff2"); font-weight: 700; }
+@font-face { font-family: Plex; src: url(fonts/plex-400.woff2) format("woff2"); font-weight: 400; }
+@font-face { font-family: Plex; src: url(fonts/plex-500.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: Plex; src: url(fonts/plex-600.woff2) format("woff2"); font-weight: 600; }
+@font-face { font-family: Mono; src: url(fonts/mono-500.woff2) format("woff2"); font-weight: 500; }
+:root { --canvas:#15171B; --surface:#1E2126; --raised:#262A30; --line:#2F333A; --ink:#F3EFE7; --muted:#A7A39B; --faint:#77736C;
+  --accent:#F2994A; --accent-ink:#1A1206; --good:#7CBA8C; --grey:#8C8880; --band:rgba(242,153,74,.18); --r:10px; }
+[data-theme="light"] { --canvas:#F6F3EE; --surface:#FFFFFF; --raised:#F1EDE6; --line:#E4DED4; --ink:#1B1A17; --muted:#6E6A62; --faint:#9A958C;
+  --accent:#D9782A; --accent-ink:#FFFFFF; --good:#3F8A55; --grey:#A39E95; --band:rgba(217,120,42,.16); }
+* { box-sizing: border-box; }
+html, body { background: var(--canvas); }
+body { margin: 0; color: var(--ink); font-family: Plex, system-ui, sans-serif; font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.num, .mono { font-family: Mono, ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 32px 40px 56px; }
+header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+h1 { font-family: Brico, Plex, sans-serif; font-size: 34px; line-height: 1.05; letter-spacing: -.02em; margin: 0; }
+.sub { color: var(--muted); margin-top: 6px; }
+.badge { font-family: Mono; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 4px 12px; }
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px; gap: 2px; }
+.seg button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 7px; color: var(--muted); font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); font-weight: 500; }
+.seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { all: unset; cursor: pointer; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 14px; padding: 9px 16px; border-radius: var(--r); }
+.btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; }
+.kpi .label { font-family: Mono; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.kpi .value { font-family: Mono; font-size: 28px; margin-top: 6px; line-height: 1.2; }
+.kpi .note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.kpi .vs { display: flex; gap: 16px; align-items: baseline; }
+.kpi .vs .base { font-size: 18px; color: var(--grey); }
+.kpi.hot .value { color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 24px; }
+.card h2 { font-family: Brico, Plex, sans-serif; font-size: 19px; letter-spacing: -.01em; margin: 0; }
+.card .head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.grid2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-top: 16px; }
+svg { display: block; width: 100%; height: auto; }
+.axis { font: 500 11px Mono, monospace; fill: var(--faint); }
+.gridline { stroke: var(--line); stroke-width: 1; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: Mono; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); }
+td.r, th.r { text-align: right; font-family: Mono; font-variant-numeric: tabular-nums; }
+.better { color: var(--good); }
+.bars { display: grid; gap: 9px; margin-top: 8px; }
+.bar { display: grid; grid-template-columns: 210px 1fr 48px; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.bar .t { height: 14px; border-radius: 5px; background: var(--raised); overflow: hidden; }
+.bar .f { height: 100%; background: var(--grey); border-radius: 5px; }
+.bar.top .f { background: var(--accent); } .bar.top { color: var(--ink); }
+.bar .v { text-align: right; font-family: Mono; color: var(--ink); }
+.foot { color: var(--faint); font-size: 13px; margin-top: 24px; line-height: 1.6; }
+.foot b { color: var(--muted); font-weight: 500; }
+@media (max-width: 900px) { .kpis { grid-template-columns: 1fr 1fr; } .grid2 { grid-template-columns: 1fr; } .wrap { padding: 24px 16px; } .bar { grid-template-columns: 150px 1fr 44px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Larkspur Bakehouse sales forecast</h1>
+      <div class="sub">Daily revenue, next 28 days, with an 80% range. Data through <span class="mono" id="asof"></span>.</div>
+    </div>
+    <div class="controls">
+      <div class="seg" id="locs" role="group" aria-label="Location"></div>
+      <button class="btn" id="csv">Download CSV</button>
+      <button class="btn ghost" id="theme" aria-label="Toggle light and dark">Light / dark</button>
+      <span class="badge">Demo data</span>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi hot"><div class="label">Next 28 days</div><div class="value" id="k-total"></div><div class="note" id="k-range"></div></div>
+    <div class="kpi"><div class="label">Backtest error (WAPE)</div><div class="vs"><div class="value" id="k-wape"></div><div class="base" id="k-wape-n"></div></div><div class="note">model vs weekly naive, this location</div></div>
+    <div class="kpi"><div class="label">Busiest forecast day</div><div class="value" id="k-peak"></div><div class="note" id="k-peak-d"></div></div>
+    <div class="kpi"><div class="label">80% range hit rate</div><div class="value" id="k-cov"></div><div class="note">share of backtest days inside the range, all stores</div></div>
+  </div>
+
+  <section class="card">
+    <div class="head">
+      <h2 id="chart-title">Revenue and forecast</h2>
+      <div class="controls">
+        <div class="legend"><span><i style="background:var(--grey)"></i>Actual</span><span><i style="background:var(--accent)"></i>Forecast</span><span><i style="background:var(--band);height:10px"></i>80% range</span></div>
+        <div class="seg" id="range" role="group" aria-label="Time range"><button data-d="120" aria-pressed="true">4 months</button><button data-d="0" aria-pressed="false">All history</button></div>
+      </div>
+    </div>
+    <div id="chart"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="head"><h2>Backtest: model vs naive baseline</h2><span class="mono" style="font-size:12px;color:var(--faint)" id="bt-note"></span></div>
+      <table id="bt"></table>
+      <div class="legend" style="margin-top:12px"><span>WAPE = total absolute error / total actual revenue. MAPE averages open days only. Weekly naive repeats the last week before each forecast date.</span></div>
+    </section>
+    <section class="card">
+      <div class="head"><h2>What drives the forecast</h2></div>
+      <div class="legend">Permutation importance: how much the error grows (in $) when each input is shuffled.</div>
+      <div class="bars" id="imp"></div>
+    </section>
+  </div>
+
+  <p class="foot">
+    <b>About this demo.</b> Larkspur Bakehouse is a fictional bakery and every number here comes from synthetic data built to behave like real sales: weekly and yearly seasonality, US holidays with closures, planned promotions, a store that opened in March 2025, and a 12-day point-of-sale outage at Riverside in July 2025 that is left as missing data, not filled in.
+    The model is gradient boosting on calendar, promo and lagged-sales features, with every lag at least 28 days old, scored by a 6-fold rolling backtest. Built by Ha Le.
+  </p>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
